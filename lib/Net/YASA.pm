@@ -13,37 +13,13 @@ Net::YASA - Interface to YASA (Yet Another Suffix Array)
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $AUTOLOAD;
 our %ok_field;
-
-=head1 SYNOPSIS
-
-This module will submit content to the YASA WebService to return
-a list of terms and corresponding frequencies.
-
-    use Net::YASA;
-
-    my $foo = Net::YASA->new();
-    my $termset = $foo->extract(<some_of_utf8_words>);
-    print 'TermSet 1: ', $$termset[0], "\n";
-    print 'TermSet 2: ', $$termset[1], "\n";
-    ...
-
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 FUNCTIONS/VARIABLE
-
-=head2 AUTOLOAD
-
-=cut
 
 for my $attr ( qw(content minfreq minlength ) ) { $ok_field{$attr}++; }
 
@@ -62,11 +38,26 @@ sub AUTOLOAD {
     }
 }
 
-=head2 private variable
+use constant YASA_WEB_URL => 'http://yasa.newzilla.org/run/';
+=head1 SYNOPSIS
 
-=cut 
+This module will submit content to the YASA WebService to return
+a list of terms and corresponding frequencies.
 
-use constant YASA_WEB_URL => 'http://yasa.newzilla.org/run/xml/';
+    use Net::YASA;
+
+    my $foo = Net::YASA->new();
+    my $termset = $foo->extract(<some_of_utf8_words>);
+    print 'TermSet 1: ', $$termset[0], "\n";
+    print 'TermSet 2: ', $$termset[1], "\n";
+    ...
+
+=head1 EXPORT
+
+A list of functions that can be exported.  You can delete this section
+if you don't export anything, such as for a purely object-oriented module.
+
+=head1 METHODS
 
 =head2 new
 
@@ -78,6 +69,7 @@ sub new {
 	_ua => undef,
 	minlength => 1,
 	minfreq => 2,
+	output => 'xml',
 	_content => undef
     };
     if(@_) {
@@ -103,7 +95,7 @@ sub extract {
     die 'No content specified' unless $content ne "";
     my $ua = $self->{_ua};
     my $response = $ua->post(
-	YASA_WEB_URL,
+	YASA_WEB_URL.$self->{output}."/",
 	{   
 	    'min' => $self->minlength,
 	    'freq' => $self->minfreq,
@@ -111,12 +103,23 @@ sub extract {
 	}
     );
     die "Error in extracting data from YASA!\n" unless $response->is_success();
-    my $xml = decode("utf8",$response->content());
-    my @results = ();
-    while ($xml =~ m#<Term>([^<]*)</Term><Freq>(\d+)</Freq>#g) {
-	push @results, $1."\t".$2;
+    if ($self->{output} eq "json" and eval {
+	    require JSON::DWIW;
+	    1;
+	}) {
+	my $result = $response->content();
+
+	my $data = JSON::DWIW->from_json($result);
+	return $data;
+    } 
+    else {
+	my $xml = decode("utf8",$response->content());
+	my @results = ();
+	while ($xml =~ m#<Term>([^<]*)</Term><Freq>(\d+)</Freq>#g) {
+	    push @results, $1."\t".$2;
+	}
+        return \@results;
     }
-    return \@results;
 }
 
 =head1 AUTHOR

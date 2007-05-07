@@ -11,7 +11,16 @@ my $builder = Module::Build->new(
 	'Encode' => 0,
 	'LWP::UserAgent' => 0
     },
+    auto_features => {
+        json_support => { 
+            description => "Use JSON output",
+            requires    => {'JSON::DWIW' => 0.08 }
+        },
+    },
     add_to_cleanup      => [ 'Net-YASA-*' ],
 );
 
+if ( $builder->feature('json_support') ) {
+    $builder->notes( jsontests => 1 );
+}
 $builder->create_build_script();
