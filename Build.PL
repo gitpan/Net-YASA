@@ -14,7 +14,7 @@ my $builder = Module::Build->new(
     auto_features => {
         json_support => { 
             description => "Use JSON output",
-            requires    => {'JSON::DWIW' => 0.08 }
+            requires    => {'JSON::Any' => 0 }
         },
     },
     add_to_cleanup      => [ 'Net-YASA-*' ],

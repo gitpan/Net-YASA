@@ -13,11 +13,11 @@ Net::YASA - Interface to YASA (Yet Another Suffix Array)
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $AUTOLOAD;
 our %ok_field;
 
@@ -104,12 +104,13 @@ sub extract {
     );
     die "Error in extracting data from YASA!\n" unless $response->is_success();
     if ($self->{output} eq "json" and eval {
-	    require JSON::DWIW;
+	    require JSON::Any;
 	    1;
 	}) {
 	my $result = $response->content();
+        my $j = JSON::Any->new;
 
-	my $data = JSON::DWIW->from_json($result);
+	my $data = $j->decode($result);
 	return $data;
     } 
     else {
@@ -170,7 +171,7 @@ L<http://search.cpan.org/dist/Net-YASA>
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2007 Cheng-Lung Sung, all rights reserved.
+Copyright 2007-2009 Cheng-Lung Sung, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.
